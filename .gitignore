@@ -1,0 +1,9 @@
+node_modules/
+.DS_Store
+*.tmp
+
+# Learner state. It normally lives in the project root, one level up from this
+# checkout, but ignore it here too in case pi is run from inside the config.
+USER.md
+MEMORY.md
+learning/
