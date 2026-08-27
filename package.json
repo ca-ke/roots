@@ -31,6 +31,18 @@
     "@earendil-works/pi-coding-agent": "*",
     "typebox": "*"
   },
+  "//peerDependenciesMeta": "pi bundles these and resolves them itself. Marked optional so npm 7+ does not auto-install a second, quickly-stale copy of the whole agent when this package is installed.",
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-ai": {
+      "optional": true
+    },
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    },
+    "typebox": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
