@@ -1,0 +1,38 @@
+{
+  "name": "roots",
+  "version": "0.1.0",
+  "description": "A learning system for pi that remembers: teaches from unconditional truths upward, then schedules what you learned with FSRS before you forget it.",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "learning",
+    "spaced-repetition",
+    "fsrs"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ca-ke/roots.git"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions"
+    ],
+    "skills": [
+      "./skills"
+    ]
+  },
+  "scripts": {
+    "test": "tsx test/smoke.ts",
+    "lint": "tsx scripts/complexity.ts"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

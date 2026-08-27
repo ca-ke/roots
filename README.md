@@ -197,6 +197,24 @@ then it keeps re-testing itself.
   [pi-interactive-subagents](https://github.com/amosblomqvist/pi-interactive-subagents);
   adapt the frontmatter for other implementations.
 
+## Development
+
+```bash
+npm install
+npm test      # smoke test: the scheduler and the storage contract
+npm run lint  # cyclomatic complexity
+```
+
+`scripts/complexity.ts` walks the TypeScript AST and scores every function by
+McCabe complexity — one plus its decision points (`if`, `?:`, loops, `case`,
+`catch`, and each `&&`/`||`/`??`). Nested functions are scored on their own
+rather than rolled up into their parent, since three small callbacks are not as
+hard to read as one body with the same total branching.
+
+The threshold is 10; `--max N` changes it, `--top N` shows more rows, `--json`
+gives machine-readable output. It exits non-zero when anything is over, so it
+works as a CI gate.
+
 ## Known limits
 
 - **Quizzes are single-select.** Multi-select would need a custom TUI component;
