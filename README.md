@@ -43,9 +43,17 @@ git clone https://github.com/ca-ke/roots .pi
 pi
 ```
 
-On first run it writes `USER.md` into your project. **Fill it in** — it is how
-the agent knows who it is teaching, and it is the single highest-leverage file
-here.
+On first run it writes `USER.md` into your project. Rather than filling in a
+blank profile, let the agent interview you:
+
+```
+/skill:onboard
+```
+
+It takes a few minutes and it **measures** where your knowledge sits with a
+couple of graded questions instead of trusting what you say about it — people
+are unreliable narrators of their own level in both directions. Until that file
+is written, every session is told so and sent back here.
 
 Then:
 
@@ -86,7 +94,9 @@ and are left exactly as pi builds them. Run `/slots` to see what loaded.
 The separation is the point:
 
 - **`SOUL.md`** is identity — how the agent teaches and decides. It rarely
-  changes.
+  changes. It ships inside the package, so `pi update` replaces it; put
+  project-level behaviour rules in `SOUL.local.md` at your project root instead,
+  which is appended to the identity slot and wins where the two conflict.
 - **`SYSTEM_PROMPT.md`** is tool guidance — which tool does what, how to write
   quiz options, how to format for a markdown reader. It changes when the tools
   change.
@@ -101,6 +111,10 @@ The separation is the point:
 
 ### Skills
 
+- **`onboard`** — interviews you and writes `USER.md`. Five to eight exchanges,
+  not a form. It checks one or two claims from your own stated background with
+  graded questions, so that what you *say* about your level gets calibrated
+  against what you can actually do; the difference between the two is recorded.
 - **`teach`** — load → probe → plan → teach → leave state behind. Probing
   binary-searches for the edge of what you know and refuses to advance while
   you are getting everything right, because all-correct means the questions were
@@ -123,8 +137,16 @@ The separation is the point:
   signal from a wrong guess and calls for different teaching. A correct answer
   on a scheduled card gets one follow-up — *instant / fine / had to dig* —
   which is the strongest spacing signal FSRS gets.
-- **`journal.ts`** — mirrors the lesson to a markdown file. Commands:
-  `/journal <path>`, `/journal off`.
+- **`typeset.ts`** — LaTeX and markdown to Unicode, for the terminal only.
+  `$\frac{a}{b}$` shows as `a/b` and `x^2` as `x²` in the quiz dialog, while the
+  journal keeps the raw LaTeX so it renders properly where it can. Anything
+  without a faithful approximation is left exactly as written — a half-converted
+  formula in a quiz option is a wrong question, which is worse than an ugly one.
+- **`journal.ts`** — mirrors the lesson to a markdown file. Each quiz question is
+  written the moment it is asked rather than after it is answered, so real
+  notation is legible in your editor while the dialog is still waiting; options
+  and the outcome follow once you answer. Commands: `/journal <path>`,
+  `/journal off`.
 - **`prompt.ts`** — slot assembly. Command: `/slots`.
 
 ## The state
@@ -201,9 +223,16 @@ then it keeps re-testing itself.
 
 ```bash
 npm install
-npm test      # smoke test: the scheduler and the storage contract
-npm run lint  # cyclomatic complexity
+npm run check      # typecheck + lint + tests
+
+npm run typecheck  # tsc against pi's real extension types
+npm run lint       # cyclomatic complexity
+npm test           # the scheduler, the storage contract, the typesetter
 ```
+
+The pi packages are declared as optional peers so that installing this pulls
+nothing, and as devDependencies so that `npm run typecheck` resolves the real
+`ExtensionAPI` types locally. A production install stays at zero dependencies.
 
 `scripts/complexity.ts` walks the TypeScript AST and scores every function by
 McCabe complexity — one plus its decision points (`if`, `?:`, loops, `case`,

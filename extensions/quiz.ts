@@ -23,6 +23,7 @@ import { Type } from "typebox";
 import { applyReview, describeSchedule } from "./memory/review.ts";
 import { Store } from "./memory/store.ts";
 import type { Grade } from "./memory/fsrs.ts";
+import { typeset } from "./typeset.ts";
 
 const DONT_KNOW = "I don't know";
 
@@ -41,16 +42,23 @@ function shuffle<T>(items: T[]): T[] {
 }
 
 interface Asked {
-	/** The option they picked, or `null` for "I don't know". */
+	/** The option they picked, verbatim as authored, or `null` for "I don't know". */
 	chosen: string | null;
 	unknown: boolean;
 	/** True when they dismissed the dialog without answering. */
 	cancelled: boolean;
+	/** The options in the order they were shown, as authored. */
+	shown: string[];
 }
 
 /**
- * Put the question up and read the answer back. Options are numbered before
- * display so that two identically worded options still map back unambiguously.
+ * Put the question up and read the answer back.
+ *
+ * Two transformations happen only for display. Options are numbered, so that
+ * two identically worded options still map back unambiguously; and they are run
+ * through `typeset`, so LaTeX is readable in a terminal. The verbatim option is
+ * what gets returned, stored, and journalled — the terminal gets the lossy copy,
+ * nothing else does.
  */
 async function ask(
 	ctx: { ui: { select(title: string, options: string[]): Promise<string | undefined> } },
@@ -59,14 +67,23 @@ async function ask(
 	options: string[],
 ): Promise<Asked> {
 	const shown = shuffle(options);
-	const labels = shown.map((o, i) => `${i + 1}. ${o}`);
-	const title = context ? `${question}\n\n${context}` : question;
+	const labels = shown.map((o, i) => `${i + 1}. ${typeset(o)}`);
+	const heading = context ? `${question}\n\n${context}` : question;
 
-	const picked = await ctx.ui.select(title, [...labels, DONT_KNOW]);
+	const picked = await ctx.ui.select(typeset(heading), [...labels, DONT_KNOW]);
 
-	if (picked === undefined) return { chosen: null, unknown: false, cancelled: true };
-	if (picked === DONT_KNOW) return { chosen: null, unknown: true, cancelled: false };
-	return { chosen: shown[labels.indexOf(picked)], unknown: false, cancelled: false };
+	if (picked === undefined) {
+		return { chosen: null, unknown: false, cancelled: true, shown };
+	}
+	if (picked === DONT_KNOW) {
+		return { chosen: null, unknown: true, cancelled: false, shown };
+	}
+	return {
+		chosen: shown[labels.indexOf(picked)],
+		unknown: false,
+		cancelled: false,
+		shown,
+	};
 }
 
 /**
@@ -250,10 +267,15 @@ export default function quiz(pi: ExtensionAPI) {
 				`${verdictOf(asked, correct, answer)}${explanation}${scheduling}`,
 				{
 					question: params.question,
+					context: params.context,
+					// Display order, verbatim — the journal replays the question as it
+					// was actually put, with the LaTeX intact so it renders there.
+					options: asked.shown,
 					chosen: asked.chosen,
 					answer,
 					correct,
 					unknown: asked.unknown,
+					explanation: params.explanation,
 					grade,
 					card: cardId,
 				},

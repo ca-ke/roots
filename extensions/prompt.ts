@@ -44,8 +44,23 @@ const SOUL_FILE = "SOUL.md";
 const GUIDANCE_FILE = "SYSTEM_PROMPT.md";
 const USER_FILE = "USER.md";
 const USER_TEMPLATE = "USER.example.md";
+/** Project-local identity override. Survives `pi update`; the package does not. */
+const SOUL_LOCAL_FILE = "SOUL.local.md";
 
 const SEPARATOR = "\n\n";
+
+/** Present in the shipped template, removed by the onboard skill. */
+const TEMPLATE_MARKER = "<!-- roots:template -->";
+
+const UNFILLED_NOTICE = `USER.md has not been filled in — it is still the shipped template, so nothing is known about this learner yet.
+
+Before teaching anything, run the \`onboard\` skill: interview them and write the file. Do not skip it and do not teach around it. Without it you are guessing at their level, their goal, and what has already failed on them, and every probe starts in the wrong place.
+
+If they decline, teach anyway, but say once that the sessions will be worse for it.`;
+
+const LOCAL_SOUL_HEADING = `## Project overrides
+
+The following comes from SOUL.local.md in this project. Where it conflicts with anything above, this wins.`;
 
 /**
  * Where this configuration lives — the directory holding SOUL.md and the rest.
@@ -95,32 +110,54 @@ export default function prompt(pi: ExtensionAPI) {
 
 	pi.on("session_start", async (_event, ctx) => {
 		const config = configDir(ctx.cwd);
-		const seeded = seedUserFile(ctx.cwd, config);
+		seedUserFile(ctx.cwd, config);
 		writeDigest(new Store(ctx.cwd), ctx.cwd);
-		if (seeded) {
+
+		const unfilled = readIfPresent(path.join(ctx.cwd, USER_FILE))?.includes(
+			TEMPLATE_MARKER,
+		);
+		if (unfilled) {
 			ctx.ui.notify(
-				`Created ${USER_FILE}. Fill it in — it is how the agent knows who it is teaching.`,
+				`${USER_FILE} is still the template. Run /skill:onboard and the agent will interview you and write it.`,
 				"info",
 			);
 		}
 	});
 
+	/** Slot 1: the shipped identity, with any project override appended. */
+	function identity(config: string, cwd: string): string | null {
+		const base = readIfPresent(path.join(config, SOUL_FILE));
+		const local = readIfPresent(path.join(cwd, SOUL_LOCAL_FILE));
+		if (!base) return local;
+		if (!local) return base;
+		return [base, LOCAL_SOUL_HEADING, local].join(SEPARATOR);
+	}
+
+	/**
+	 * The learner's profile, or an instruction to go and get one. An untouched
+	 * template is worse than an absent file: it looks like an answer.
+	 */
+	function profile(cwd: string): string {
+		const body = readIfPresent(path.join(cwd, USER_FILE));
+		if (!body || body.includes(TEMPLATE_MARKER)) return UNFILLED_NOTICE;
+		return body;
+	}
+
 	pi.on("before_agent_start", async (event, ctx) => {
 		const config = configDir(ctx.cwd);
 
-		const soul = readIfPresent(path.join(config, SOUL_FILE));
+		const soul = identity(config, ctx.cwd);
 		const guidance = readIfPresent(path.join(config, GUIDANCE_FILE));
 
 		// Regenerated per turn: a review two messages ago should already be
 		// reflected here, not one session later.
 		const memory = writeDigest(new Store(ctx.cwd), ctx.cwd).trim();
-		const user = readIfPresent(path.join(ctx.cwd, USER_FILE));
 
 		const slots: string[] = [];
 		if (soul) slots.push(slot(1, "identity", soul));
 		if (guidance) slots.push(slot(2, "tool guidance", guidance));
 
-		const persistent = [user, memory].filter(Boolean).join(SEPARATOR);
+		const persistent = [profile(ctx.cwd), memory].filter(Boolean).join(SEPARATOR);
 		if (persistent) slots.push(slot(3, "persistent memory", persistent));
 
 		if (slots.length === 0) return;
@@ -138,15 +175,21 @@ export default function prompt(pi: ExtensionAPI) {
 			const config = configDir(ctx.cwd);
 			const rows = [
 				[1, "identity", path.join(config, SOUL_FILE)],
+				[1, "identity override", path.join(ctx.cwd, SOUL_LOCAL_FILE)],
 				[2, "tool guidance", path.join(config, GUIDANCE_FILE)],
 				[3, "persistent memory", path.join(ctx.cwd, USER_FILE)],
 				[3, "persistent memory", path.join(ctx.cwd, MEMORY_FILE)],
 			] as const;
 
 			const lines = rows.map(([n, name, file]) => {
-				const size = readIfPresent(file)?.length ?? 0;
-				const mark = size > 0 ? "✓" : "·";
-				const detail = size > 0 ? `${size} chars` : "missing";
+				const body = readIfPresent(file);
+				const unfilled = body?.includes(TEMPLATE_MARKER) ?? false;
+				const mark = unfilled ? "!" : body ? "✓" : "·";
+				const detail = unfilled
+					? "still the template — run /skill:onboard"
+					: body
+						? `${body.length} chars`
+						: "not present";
 				return `${mark} slot ${n} ${name.padEnd(18)} ${path.basename(file)} (${detail})`;
 			});
 			lines.push("· slot 4 skills register     assembled by pi from skills/");

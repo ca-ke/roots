@@ -1,8 +1,15 @@
+<!-- roots:template — this marker means the file has not been filled in yet.
+     The onboard skill removes it when it writes the real profile. -->
+
 # User
 
 Who the agent is teaching. This file is copied to `USER.md` on first run and is
 loaded into the persistent-memory slot on every turn, so keep it short — this is
 a profile, not a journal. Delete the guidance in each section and write yours.
+
+The fastest way to fill it is to let the agent interview you: run
+`/skill:onboard`. It takes a few minutes, and it measures where your knowledge
+actually sits instead of trusting what you say about it.
 
 The agent edits this file too, when it learns something durable about you. If it
 writes something wrong, correct it here directly.

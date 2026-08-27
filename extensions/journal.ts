@@ -23,10 +23,49 @@ import * as path from "node:path";
 
 interface QuizDetails {
 	question?: string;
+	context?: string;
+	options?: string[];
 	chosen?: string | null;
 	answer?: string;
 	correct?: boolean;
 	unknown?: boolean;
+	explanation?: string;
+}
+
+/**
+ * The question, written the moment it is asked rather than after it is answered.
+ *
+ * This is the only place LaTeX actually renders. The dialog can show `x²` at
+ * best; the reader shows $x^2$ properly. Writing on `tool_execution_start` means
+ * the learner can read the real thing in their editor while the dialog is still
+ * waiting for them — so a question carrying real notation is legible somewhere.
+ *
+ * Options are deliberately withheld until the answer comes back: they are
+ * shuffled inside the tool, so anything written now would be in a different
+ * order from the dialog and would just confuse the person reading both.
+ */
+function questionBlock(args: { question?: string; context?: string }): string {
+	if (!args.question) return "";
+	const context = args.context ? `${args.context}\n\n` : "";
+	return `**Q.** ${args.question}\n\n${context}`;
+}
+
+function outcomeBlock(d: QuizDetails): string {
+	const options = d.options ?? [];
+	const lines = options.map((option) => {
+		const mark = option === d.chosen ? "x" : " ";
+		const arrow = option === d.chosen ? "  ← chosen" : "";
+		return `- [${mark}] ${option}${arrow}`;
+	});
+
+	if (d.unknown) lines.push("- [x] *I don't know*  ← chosen");
+
+	const verdict = d.correct
+		? "✓ **Correct.**"
+		: `✗ **Wrong.** Correct answer: ${d.answer ?? "—"}`;
+
+	const explanation = d.explanation ? `\n> ${d.explanation}\n` : "";
+	return `${lines.join("\n")}\n\n${verdict}\n${explanation}\n`;
 }
 
 /** Message content arrives as a string or as a block array; flatten both. */
@@ -91,19 +130,22 @@ export default function journal(pi: ExtensionAPI) {
 		}
 	});
 
+	// The question goes down while the dialog is still open, so it can be read
+	// rendered instead of as raw LaTeX in a terminal.
+	pi.on("tool_execution_start", async (event) => {
+		if (!file || event.toolName !== "quiz") return;
+		append(questionBlock((event.args ?? {}) as { question?: string; context?: string }));
+	});
+
 	pi.on("tool_result", async (event) => {
 		if (!file || event.toolName !== "quiz") return;
 		const d = (event.details ?? {}) as QuizDetails;
-		if (!d.question) return;
-
-		const mark = d.correct ? "✓" : "✗";
-		const given = d.unknown ? "*I don't know*" : (d.chosen ?? "—");
-		append(
-			`> **${mark} ${d.question}**\n` +
-				`> Answered: ${given}\n` +
-				(d.correct ? "" : `> Correct: ${d.answer}\n`) +
-				"\n",
-		);
+		// A dismissed question leaves its prompt above with nothing under it.
+		if (!d.question) {
+			append("*(no answer)*\n\n");
+			return;
+		}
+		append(outcomeBlock(d));
 	});
 
 	pi.registerCommand("journal", {

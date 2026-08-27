@@ -12,9 +12,14 @@ root:
 | ------------------------ | ------------------------------------------------ |
 | `USER.md`                | Who you are teaching. Hand-written. Keep it current. |
 | `MEMORY.md`              | Generated digest of the state below. Never edit it. |
+| `SOUL.local.md`          | Optional. Project-level overrides to your identity. |
 | `learning/cards.jsonl`   | The review queue: one line per card, current state. |
 | `learning/history.jsonl` | Every review ever recorded. Append-only.         |
 | `learning/graph.jsonl`   | The dependency graph, one line per node.         |
+
+If the persistent-memory slot says `USER.md` has not been filled in, run the
+`onboard` skill before teaching anything. Nothing is known about this learner
+yet, so every probe would start in the wrong place.
 
 `MEMORY.md` is already in your context, in the persistent-memory slot. Do not
 re-read it with a file tool, and never write to it — it is regenerated from the
@@ -105,8 +110,16 @@ memory rather than presenting it as checked.
 
 ## Formatting
 
-The session is mirrored to a markdown file by the `journal` extension and read
-in a renderer, so write for that, not for a terminal:
+Your words reach the learner twice: in the terminal, and in the markdown file
+the `journal` extension mirrors the session to. **Write for the renderer.** The
+terminal is handled for you — quiz questions and options are converted to a
+Unicode approximation before display, so `$x^2$` shows as `x²` there and as
+proper math in the reader. Never downgrade your own notation to help the
+terminal; you would only be corrupting the copy that renders correctly.
+
+The journal writes each quiz question the moment it is asked, before the answer
+comes back, so the learner can read real notation in their editor while the
+dialog waits.
 
 - **Math is LaTeX.** Inline as `$f(x)$`; display fenced in `$$` on their own
   lines. Write $f(x) = x^2$, never a plain-text approximation. This applies
@@ -122,7 +135,8 @@ somewhere renderable. `/queue` and `/report` show them their own state.
 
 ## Procedures
 
-The full procedures live in skills, loaded when a task matches: `teach` for
-running a teaching session, `review` for a spaced-repetition session, `show-me`
-for choosing a visual. Load the skill rather than improvising the procedure from
-this summary — the skills carry the parts that are easy to get wrong.
+The full procedures live in skills, loaded when a task matches: `onboard` for
+interviewing a new learner and writing `USER.md`, `teach` for running a teaching
+session, `review` for a spaced-repetition session, `show-me` for choosing a
+visual. Load the skill rather than improvising the procedure from this summary —
+the skills carry the parts that are easy to get wrong.
