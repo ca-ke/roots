@@ -7,7 +7,7 @@
  * matters more: a wrong approximation in a quiz option is a wrong question.
  */
 
-import { typeset } from "../extensions/typeset.ts";
+import { typeset } from "../lib/typeset.ts";
 
 let failures = 0;
 function is(input: string, expected: string) {

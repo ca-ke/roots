@@ -23,7 +23,7 @@ import { Type } from "typebox";
 import { applyReview, describeSchedule } from "./memory/review.ts";
 import { Store } from "./memory/store.ts";
 import type { Grade } from "./memory/fsrs.ts";
-import { typeset } from "./typeset.ts";
+import { typeset } from "../lib/typeset.ts";
 
 const DONT_KNOW = "I don't know";
 

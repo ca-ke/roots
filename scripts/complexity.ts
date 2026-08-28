@@ -36,7 +36,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import ts from "typescript";
 
-const DEFAULT_PATHS = ["extensions", "scripts", "test"];
+const DEFAULT_PATHS = ["extensions", "lib", "scripts", "test"];
 const DEFAULT_MAX = 10;
 
 interface Entry {

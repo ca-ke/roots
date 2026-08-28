@@ -137,17 +137,22 @@ The separation is the point:
   signal from a wrong guess and calls for different teaching. A correct answer
   on a scheduled card gets one follow-up — *instant / fine / had to dig* —
   which is the strongest spacing signal FSRS gets.
-- **`typeset.ts`** — LaTeX and markdown to Unicode, for the terminal only.
-  `$\frac{a}{b}$` shows as `a/b` and `x^2` as `x²` in the quiz dialog, while the
-  journal keeps the raw LaTeX so it renders properly where it can. Anything
-  without a faithful approximation is left exactly as written — a half-converted
-  formula in a quiz option is a wrong question, which is worse than an ugly one.
 - **`journal.ts`** — mirrors the lesson to a markdown file. Each quiz question is
   written the moment it is asked rather than after it is answered, so real
   notation is legible in your editor while the dialog is still waiting; options
   and the outcome follow once you answer. Commands: `/journal <path>`,
   `/journal off`.
 - **`prompt.ts`** — slot assembly. Command: `/slots`.
+
+Shared code lives in `lib/`, deliberately outside `extensions/`: pi loads every
+top-level `.ts` in that directory as an extension and rejects anything without a
+factory export, so a plain helper module cannot live there.
+
+- **`lib/typeset.ts`** — LaTeX and markdown to Unicode, for the terminal only.
+  `$\frac{a}{b}$` shows as `a/b` and `x^2` as `x²` in the quiz dialog, while the
+  journal keeps the raw LaTeX so it renders properly where it can. Anything
+  without a faithful approximation is left exactly as written — a half-converted
+  formula in a quiz option is a wrong question, which is worse than an ugly one.
 
 ## The state
 
