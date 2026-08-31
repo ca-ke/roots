@@ -220,19 +220,23 @@ then it keeps re-testing itself.
 - **Optional:** a subagent implementation, for the `researcher`. With one, the
   agent verifies before it asserts. Without one it still teaches, and the tool
   guidance tells it to say plainly when it is working from memory instead of
-  presenting it as checked. `agents/researcher.md` follows the format used by
-  [pi-interactive-subagents](https://github.com/amosblomqvist/pi-interactive-subagents);
-  adapt the frontmatter for other implementations.
+  presenting it as checked. The agent is authored in `agents/researcher.yaml` —
+  metadata and the whole system prompt in one YAML document — and rendered by
+  `npm run agents` to `agents/researcher.md`, which is the format
+  [pi-interactive-subagents](https://github.com/amosblomqvist/pi-interactive-subagents)
+  loads. Edit the YAML; the markdown is generated, and `npm run check` fails if
+  it has drifted. Adapt the fields for other implementations.
 
 ## Development
 
 ```bash
 npm install
-npm run check      # typecheck + lint + tests
+npm run check      # typecheck + lint + tests + agents in sync
 
 npm run typecheck  # tsc against pi's real extension types
 npm run lint       # cyclomatic complexity
 npm test           # the scheduler, the storage contract, the typesetter
+npm run agents     # render agents/*.yaml to the .md subagents load
 ```
 
 The pi packages are declared as optional peers so that installing this pulls

@@ -1,4 +1,5 @@
 ---
+# Generated from researcher.yaml by `npm run agents`. Edit the YAML, not this file.
 name: researcher
 description: Web researcher — verifies claims and maps a topic before it is taught, returning a sourced brief.
 tools: web_search, web_fetch
